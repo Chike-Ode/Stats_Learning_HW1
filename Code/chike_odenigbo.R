@@ -19,7 +19,7 @@ for (degree in 1:10){
   mse_train = mean(lm_summary$residuals^2)
   mse_test = mean((test_df$y - predict.lm(model, test_df)) ^ 2)
   perf_df[nrow(perf_df) + 1,] = c(degree,mse_train,mse_test)
-}#todo
+}#test
 
 ggplot(perf_df, aes(x=degree)) + 
   geom_line(aes(y = mse_train), color = "darkred") + 
