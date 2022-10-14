@@ -1,0 +1,336 @@
+---
+title: "Homework 1"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+# Import Libraries
+```{r}
+library("rstudioapi") 
+library("ggplot2")
+library(caret)
+library(MASS)
+library(ROCR)
+library(ISLR)
+library(rpart)
+library(rpart.plot)
+theme_set(theme_minimal())
+```
+
+
+
+# Exercise 1
+```{r}
+train_df = read.table("Data/datasimul1_train.txt",header=T)
+test_df = read.table("Data/datasimul1_test.txt",header=T)
+
+# Utility Function
+mse_calculator = function(train = train_df, test = test_df, degree_range = 1:10, display_plot = FALSE, question_num = "",include_test = FALSE){
+  if (include_test == FALSE){
+    perf_df = data.frame(matrix(ncol = 2, nrow = 0))
+    colnames(perf_df) = c("degree","mse_train")
+  }else{
+    perf_df = data.frame(matrix(ncol = 3, nrow = 0))
+    colnames(perf_df) = c("degree","mse_train","mse_test")
+  }
+  for (degree in degree_range){
+    model = lm(y ~ poly(x,degree), data = train)
+    lm_summary = summary(model)
+    mse_train = mean(lm_summary$residuals^2)
+    if (include_test == TRUE){
+      mse_test = mean((test$y - predict.lm(model, test)) ^ 2)
+      perf_df[nrow(perf_df) + 1,] = c(degree,mse_train,mse_test)
+    }else{
+      perf_df[nrow(perf_df) + 1,] = c(degree,mse_train)
+    }
+    
+  }
+  if (display_plot == TRUE) {
+    p = ggplot(perf_df, aes(x=degree)) + 
+      geom_line(aes(y = mse_train), color = "darkred") + 
+      geom_line(aes(y = mse_test), color="steelblue", linetype="twodash")
+    print(p)
+  }
+  
+  #knitr::kable(perf_df, format = "markdown")
+  description = paste("The Result for Question: ",question_num)
+  print(description)
+  print(perf_df)
+  return(perf_df)
+}
+
+```
+## Question 1.1
+```{r}
+mse_calculator(train = train_df, test = test_df, degree_range = 1:10, display_plot = FALSE, question_num = "1.1",include_test = FALSE)
+```
+## Question 1.2
+```{r}
+mse_calculator(train = train_df, test = test_df, degree_range = 1:10, display_plot = FALSE, question_num = "1.2",include_test = TRUE)
+```
+
+## Question 1.3
+```{r}
+mse_calculator(train = train_df, test = test_df, degree_range = 1:10, display_plot = TRUE, question_num = "1.3",include_test = TRUE)
+```
+
+## Question 1.4
+```{r}
+mse_calculator(train = train_df, test = test_df, degree_range = 10:1, display_plot = TRUE, question_num = "1.4",include_test = TRUE)
+```
+
+## Question 1.5
+```{r}
+mydata=read.csv("Data/kc_house_data.csv")
+mydata$log_price=log(mydata$price)
+mydata$bedrooms2=mydata$bedroom^2
+mydata$log_sqft_living=log(mydata$sqft_living)
+mydata$log_sqft_lot=log(mydata$sqft_lot)
+mydata$floors_cat=as.factor(mydata$floors)
+mydata$condition_binaire=ifelse(mydata$condition>=3,1,0)
+mydata$log_sqft_above=log(mydata$sqft_above)
+mydata$age=2015-mydata$yr_built
+mydata$age2=mydata$age^2
+mydata$lat2=mydata$lat^2
+mydata$long2=mydata$long^2
+mydata$lat3=mydata$lat^3
+mydata$long3=mydata$long^3
+
+# Division de l'échantillon (train = 10,000 observations)
+set.seed(200)  
+n=nrow(mydata)
+id.train=sample(1:n,10000,replace=FALSE)
+id.valid=sample(setdiff(1:n,id.train),11613,replace=FALSE)
+
+# Division de l'échantillon
+mydata.train=mydata[id.train,]
+mydata.valid=mydata[id.valid,]
+model1=lm(log_price~bedrooms+bathrooms+log_sqft_living+log_sqft_lot+floors_cat
+          +waterfront+condition_binaire+grade+log_sqft_above+sqft_basement
+          +age+lat+long,data=mydata.train)
+model1_summary = summary(model1)
+mse_train_model1 = mean(model1_summary$residuals^2)
+mse_test1 = mean((mydata.valid$y - predict.lm(model1, mydata.valid)) ^ 2)
+print(mse_test1)
+print(mse_train_model1)
+```
+
+# Exercise 2
+## Question 2.1
+The **misclassification rate** measures the percentage of all the observations that were wrongly predicted meaning the observation reoffended when predicted not to and vice versa.
+
+The **false positive rate** measures the number of cases that were predicted as to reoffend but did not reoffend as a percentage of the number of cases not expected to reoffend.
+
+The **false discovery rate** measures the number of observations that were predicted as would reoffend when in fact they didnt as a percentage of all the cases that reoffended.
+
+The difference between the false positive rate and the false discovery rate is the denominator.
+
+The **false negative rate** measures the number of observations that were predicted as were not going to reoffend but in fact did reoffend as a percentage of observations that did reoffend.
+
+## Question 2.2
+```{r}
+compas_df = read.csv("Data/Compas.csv", sep=";",header=T)
+compas_df$decil_score
+compas_df$two_year_recid
+compas_df$recidive_pred = factor(ifelse(compas_df$decile_score>=6, 1, 0)) 
+
+conf_matrix = confusionMatrix(data=factor(compas_df$recidive_pred), reference = factor(compas_df$two_year_recid))
+fp = conf_matrix$table[2,1]
+tp = conf_matrix$table[2,2]
+tn = conf_matrix$table[1,1]
+fn = conf_matrix$table[1,2]
+
+#Question 2.2
+# misclassification
+mis_rate = (fp + fn)/(fp + fn + tn +tp)
+# false positive rate
+fpr = fp / (fp + tn)
+# false discovery rates
+fdr = fp / (fp + tp)
+print(mis_rate)
+print(fpr)
+print(fdr)
+```
+
+## Question 2.3
+```{r}
+compas_df$decile_score_scaled = compas_df$decile_score / 10
+compas_df$decile_score_scaled
+
+pred = prediction(compas_df$decile_score_scaled,compas_df$two_year_recid)
+perf <- performance(pred, "tpr", "fpr")
+cost_perf <- performance(pred, "cost")
+plot(perf,print.cutoffs.at=seq(0.1,by=0.1))
+plot(cost_perf)
+
+pred@cutoffs[[1]][which.min(cost_perf@y.values[[1]])]
+
+```
+
+## Question 2.4
+```{r}
+afr_amer_df = subset(compas_df,race == 'African-American')
+conf_matrix_afr = confusionMatrix(data=factor(afr_amer_df$recidive_pred), reference = factor(afr_amer_df$two_year_recid))
+fp_afr = conf_matrix_afr$table[2,1]
+tp_afr = conf_matrix_afr$table[2,2]
+tn_afr = conf_matrix_afr$table[1,1]
+fn_afr = conf_matrix_afr$table[1,2]
+print('African-American')
+# misclassification
+mis_rate_afr = (fp_afr + fn_afr)/(fp_afr + fn_afr + tn_afr + tp_afr)
+# false positive rate
+fpr_afr = fp_afr / (fp_afr + tn_afr)
+# false discovery rates
+fdr_afr = fp_afr / (fp_afr + tp_afr)
+
+print(mis_rate_afr)
+print(fpr_afr)
+print(fdr_afr)
+
+
+cauc_df = subset(compas_df,race == 'Caucasian')
+conf_matrix_cauc = confusionMatrix(data=factor(cauc_df$recidive_pred), reference = factor(cauc_df$two_year_recid))
+fp_cauc = conf_matrix_cauc$table[2,1]
+tp_cauc = conf_matrix_cauc$table[2,2]
+tn_cauc = conf_matrix_cauc$table[1,1]
+fn_cauc = conf_matrix_cauc$table[1,2]
+
+# misclassification
+mis_rate_cauc = (fp_cauc + fn_cauc)/(fp_cauc + fn_cauc + tn_cauc + tp_cauc)
+# false positive rate
+fpr_cauc = fp_cauc / (fp_cauc + tn_cauc)
+# false discovery rates
+fdr_cauc = fp_cauc / (fp_cauc + tp_cauc)
+print('Caucasian')
+print(mis_rate_cauc)
+print(fpr_cauc)
+print(fdr_cauc)
+```
+
+## Question 2.5
+```{r}
+pred_afr_amer = prediction(afr_amer_df$decile_score_scaled,afr_amer_df$two_year_recid)
+cost_perf_afr_amer <- performance(pred_afr_amer, "cost")
+plot(cost_perf_afr_amer)
+
+pred_afr_amer@cutoffs[[1]][which.min(cost_perf_afr_amer@y.values[[1]])]
+
+
+```
+
+## Question 2.5
+```{r}
+pred_cauc = prediction(cauc_df$decile_score_scaled,cauc_df$two_year_recid)
+cost_perf_cauc <- performance(pred_cauc, "cost")
+plot(cost_perf_cauc)
+
+pred_afr_cauc@cutoffs[[1]][which.min(cost_perf_cauc@y.values[[1]])]
+```
+## Question 2.5 TODO
+
+
+
+# Exercise 3
+```{r}
+dbm_df = read.csv("Data/dbm_final.csv",header=T)
+dbm_df$region=as.factor(dbm_df$region)
+dbm_df$revenu=as.factor(dbm_df$revenu)
+model_dbm=glm(yachat~sexe + age + revenu + region + conjoint + anneeclient + semainedernier+montantdernier + montantunan + achatunan,family="binomial",data=dbm_df[dbm_df$train==1,] )
+summary(model_dbm)
+y_true = dbm_df$yachat
+y_pred = predict(model_dbm, dbm_df, type="response")
+
+min(y_pred)  
+max(y_pred)
+plot_roc = function(y_true,y_pred,increment = 0.02){
+  perf_df = data.frame(matrix(ncol = 3, nrow = 0))
+  colnames(perf_df) = c("threshold","true_positive_rate","false_positive_rate")
+  for(i in seq(from=0, to=1, by=increment)){
+    y_temp_pred = ifelse(y_pred>=i,1,0)
+    conf_matrix = confusionMatrix(data=factor(y_temp_pred), reference = factor(y_true))
+    fp = conf_matrix$table[2,1]
+    tp = conf_matrix$table[2,2]
+    tn = conf_matrix$table[1,1]
+    fn = conf_matrix$table[1,2]
+    #sensitivity_temp = tp/(tp+fn)
+    #specificity_temp = tn/(tn+fp)
+    fpr = fp / (fp + tn)
+    tpr = tp/(tp+fn)
+    perf_df[nrow(perf_df) + 1,] = c(i,tpr,fpr)
+  }
+  #p = (ggplot(data = perf_df,aes(x=fpr,y=tpr,group = 1)) +
+  #  geom_line())
+  p = ggplot(perf_df,aes(false_positive_rate,true_positive_rate))+geom_line(size = 2, alpha = 0.7)
+  print(p)
+  return(perf_df)
+}
+df2 = plot_roc(y_true,y_pred)
+
+```
+## Question 4.1a
+```{R}
+rodeo_df = read.csv("Data/rodeo.csv",header=T)
+model_rodeo=glm(achat~age,family="binomial",data=rodeo_df )
+# Question 4.1 a
+summary(model_rodeo)
+
+```
+## Question 4.1b 
+
+```{R}
+predict(model_rodeo, data.frame(age = c(35)), type="response")
+predict(model_rodeo, data.frame(age = c(50)), type="response")
+
+```
+## Question 4.1c
+```{R}
+age_pred_df = data.frame(matrix(ncol = 2, nrow = 0))
+colnames(age_pred_df) = c("age","prediction")
+
+for(year in seq(from=0, to=100, by=2)){
+  prediction_age = predict(model_rodeo, data.frame(age = c(year)), type="response")
+  age_pred_df[nrow(age_pred_df) + 1,] = c(year,prediction_age)
+}
+p = ggplot(age_pred_df,aes(age,prediction))+geom_line(size = 2, alpha = 0.7)
+print(p)
+
+```
+
+```{R}
+set.seed(101)
+sample <- sample.int(n = nrow(rodeo_df), size = floor(.75*nrow(rodeo_df)), replace = F)
+train_rod_df <- rodeo_df[sample, ]
+test_rod_df  <- rodeo_df[-sample, ]
+
+ctrl <- trainControl(method = "cv", number = 5)
+
+rodeo_df$achat = factor(rodeo_df$achat)
+
+model_rodeo_cv <- train(achat~age, data = rodeo_df, method = "glm", trControl = ctrl,family=binomial())
+print(summary(model_rodeo_cv))
+
+
+#model_rodeo_cv=glm(achat~age,family="binomial",data=train_rod_df )
+y_pred_rod_cv = predict(model_rodeo_cv, test_rod_df, type="raw")
+
+
+conf_matrix_rod_cv = confusionMatrix(data=factor(y_pred_rod_cv), reference = factor(test_rod_df$achat))
+fp_rod_cv = conf_matrix_rod_cv$table[2,1]
+tp_rod_cv = conf_matrix_rod_cv$table[2,2]
+tn_rod_cv = conf_matrix_rod_cv$table[1,1]
+fn_rod_cv = conf_matrix_rod_cv$table[1,2]
+fpr_rod_cv = fp_rod_cv / (fp_rod_cv + tn_rod_cv)
+
+print(fpr_rod_cv)
+```
+```{R}
+predict(model_rodeo_cv, test_rod_df, type="raw")
+```
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.

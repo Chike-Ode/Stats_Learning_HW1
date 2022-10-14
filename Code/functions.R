@@ -13,10 +13,16 @@
 #install.packages('Rcpp', type="binary")
 #install.packages('rlang', type="binary")
 #install.packages('caret', type="binary")
+#install.packages("ISLR")
+#install.packages("rpart.plot")
 library("rstudioapi") 
 library("ggplot2")
 library(caret)
+library(MASS)
 library(ROCR)
+library(ISLR)
+library(rpart)
+library(rpart.plot)
 theme_set(theme_minimal())
 #install.packages("rmarkdown", dependencies=TRUE) 
 
@@ -315,6 +321,7 @@ View(rodeo_df.train)
 model_rodeo_interactions=glm(achat~(.)*age,family="binomial",data=rodeo_df.train )
 summary(model_rodeo_interactions)
 y_pred_interactions = ifelse(predict(model_rodeo_interactions, rodeo_df.valid, type="response")>=0.5,1,0)
+y_pred_interactions_prob = predict(model_rodeo_interactions, rodeo_df.valid, type="response")
 
 AIC(model_rodeo_interactions)
 BIC(model_rodeo_interactions)
@@ -324,6 +331,11 @@ fp_interactions = conf_matrix_interactions$table[2,1]
 tp_interactions = conf_matrix_interactions$table[2,2]
 tn_interactions = conf_matrix_interactions$table[1,1]
 fn_interactions = conf_matrix_interactions$table[1,2]
+
+pred_interactions = prediction(y_pred_interactions_prob,rodeo_df.valid$achat)
+
+auc_interactions = performance(pred_interactions, measure = "auc")
+print(auc_interactions@y.values)
 
 # misclassification
 mis_rate_interactions = (fp_interactions + fn_interactions)/(fp_interactions + fn_interactions + tn_interactions +tp_interactions)
@@ -341,3 +353,174 @@ fn_all_var = conf_matrix_all_var$table[1,2]
 # misclassification
 mis_rate_all_var = (fp_all_var + fn_all_var)/(fp_all_var + fn_all_var + tn_all_var +tp_all_var)
 
+# Question 4.5
+sensitivity_interactions = tp_interactions/(tp_interactions+fn_interactions)
+specificity_interactions = tn_interactions/(tn_interactions+fp_interactions)
+
+# Question 4.6
+step_wise_model_interactions <- stepAIC(model_rodeo_interactions, direction = "both", 
+                      trace = FALSE)
+y_pred_step_wise_interactions_prob = predict(model_rodeo_interactions, rodeo_df.valid, type="response")
+
+summary(step_wise_model_interactions)
+pred_step_wise_interactions = prediction(y_pred_step_wise_interactions_prob,rodeo_df.valid$achat)
+
+auc_step_wise_interactions = performance(pred_step_wise_interactions, measure = "auc")
+print(auc_step_wise_interactions@y.values)
+
+perf_step_wise_interactions = performance(pred_step_wise_interactions, "tpr","fpr")
+plot(perf_step_wise_interactions,colorize = T, lwd = 2)
+abline(a = 0, b = 1) 
+
+###########################################
+#EXERCISE 5
+###########################################
+set.seed(12345)
+x=rnorm(1000)
+variations = c(0.1,0.5,1,1.5,2,2.5,3)
+num_obs = c(10,30,50,100,200,500,1000)
+
+beta0=1
+beta1=2
+sigma=1
+y=beta0+beta1*x+ rlnorm(200)
+
+x[1:100]
+
+model=lm(y~x)
+summary(model)
+model$coefficients[2]
+
+y
+x
+
+sim_df = data.frame(matrix(ncol = 3, nrow = 0))
+colnames(sim_df) = c("error_variation","sample_size","b1_est")
+for (var in variations){
+  for (n in num_obs){
+    x_sub = x[1:n]
+    error_term = rnorm(n = n, sd = var)
+    y = beta0 + beta1*x_sub + error_term
+    model=lm(y~x_sub)
+    #model_sum = summary(model)
+    b1_est = model$coefficients[2]
+    sim_df[nrow(sim_df) + 1,] = c(var,n,b1_est)
+  }
+}
+standard_error = sd(sim_df$b1_est)/sqrt(length(sim_df$b1_est))
+
+sim_df_500 = data.frame(matrix(ncol = 3, nrow = 0))
+colnames(sim_df_500) = c("error_variation","sample_size","b1_est")
+for (i in 1:500){
+  for (var in variations){
+    for (n in num_obs){
+      x_sub = x[1:n]
+      error_term = rnorm(n = n, sd = var)
+      y = beta0 + beta1*x_sub + error_term
+      model=lm(y~x_sub)
+      #model_sum = summary(model)
+      b1_est = model$coefficients[2]
+      sim_df_500[nrow(sim_df_500) + 1,] = c(var,n,b1_est)
+    }
+  }
+}
+standard_error_500 = sd(sim_df_500$b1_est)/sqrt(length(sim_df_500$b1_est))
+
+###########################################
+#EXERCISE 6
+###########################################
+
+n=nrow(OJ)
+set.seed(1234)
+id.train=sample(1:n,size=800)
+id.test=setdiff(1:n,id.train)
+OJ.train=OJ[id.train,-3]
+OJ.test=OJ[id.test,-3]
+
+View(OJ.train)
+# Question 6.2
+mytree = rpart(Purchase~., data=OJ.train, method = "class")
+plot(mytree)
+text(mytree)
+# Question 6.3
+print(mytree)
+tree_summary = summary(mytree)
+# Question 6.4 TODO 
+tree_summary$frame
+tree_summary$terms
+tree_summary
+prp(mytree)
+mytree$where
+
+# Question 6.5
+unique_dsc = length(unique(OJ.train$PctDiscMM)) 
+unique_store = length(unique(OJ.train$STORE))
+answer = unique_dsc + unique_store
+
+
+# Question 6.6
+y_pred_tree = predict(mytree,OJ.test, type="class")
+conf_matrix_tree = confusionMatrix(data=factor(y_pred_tree), reference = factor(OJ.test$Purchase))
+fp_tree = conf_matrix_tree$table[2,1]
+tp_tree = conf_matrix_tree$table[2,2]
+tn_tree = conf_matrix_tree$table[1,1]
+fn_tree = conf_matrix_tree$table[1,2]
+
+# misclassification
+mis_rate_tree = (fp_tree + fn_tree)/(fp_tree + fn_tree + tn_tree +tp_tree)
+
+# Question 6.7
+mytree$cptable
+cp_optimal=mytree$cptable[which.min(mytree$cptable[,4]),1]
+mytree_optimal = prune(mytree,cp=cp_optimal)
+
+y_pred_tree_optimal = predict(mytree_optimal,OJ.test, type="class")
+conf_matrix_tree_optimal = confusionMatrix(data=factor(y_pred_tree_optimal), reference = factor(OJ.test$Purchase))
+fp_tree_optimal = conf_matrix_tree_optimal$table[2,1]
+tp_tree_optimal = conf_matrix_tree_optimal$table[2,2]
+tn_tree_optimal = conf_matrix_tree_optimal$table[1,1]
+fn_tree_optimal = conf_matrix_tree_optimal$table[1,2]
+
+# misclassification
+mis_rate_tree_optimal = (fp_tree_optimal + fn_tree_optimal)/(fp_tree_optimal + fn_tree_optimal + tn_tree_optimal +tp_tree_optimal)
+
+# false positive rate
+fpr_tree_optimal = fp_tree_optimal / (fp_tree_optimal + tn_tree_optimal)
+
+
+n=nrow(OJ)
+set.seed(2)
+id.train=sample(1:n,size=800)
+id.test=setdiff(1:n,id.train)
+OJ.train=OJ[id.train,-3]
+OJ.test=OJ[id.test,-3]
+
+# Question 6.6
+mytree = rpart(Purchase~., data=OJ.train, method = "class")
+y_pred_tree = predict(mytree,OJ.test, type="class")
+conf_matrix_tree = confusionMatrix(data=factor(y_pred_tree), reference = factor(OJ.test$Purchase))
+fp_tree = conf_matrix_tree$table[2,1]
+tp_tree = conf_matrix_tree$table[2,2]
+tn_tree = conf_matrix_tree$table[1,1]
+fn_tree = conf_matrix_tree$table[1,2]
+
+# misclassification
+mis_rate_tree = (fp_tree + fn_tree)/(fp_tree + fn_tree + tn_tree +tp_tree)
+
+# Question 6.7
+mytree$cptable
+cp_optimal=mytree$cptable[which.min(mytree$cptable[,4]),1]
+mytree_optimal = prune(mytree,cp=cp_optimal)
+
+y_pred_tree_optimal = predict(mytree_optimal,OJ.test, type="class")
+conf_matrix_tree_optimal = confusionMatrix(data=factor(y_pred_tree_optimal), reference = factor(OJ.test$Purchase))
+fp_tree_optimal = conf_matrix_tree_optimal$table[2,1]
+tp_tree_optimal = conf_matrix_tree_optimal$table[2,2]
+tn_tree_optimal = conf_matrix_tree_optimal$table[1,1]
+fn_tree_optimal = conf_matrix_tree_optimal$table[1,2]
+
+# misclassification
+mis_rate_tree_optimal = (fp_tree_optimal + fn_tree_optimal)/(fp_tree_optimal + fn_tree_optimal + tn_tree_optimal +tp_tree_optimal)
+
+# false positive rate
+fpr_tree_optimal = fp_tree_optimal / (fp_tree_optimal + tn_tree_optimal)
