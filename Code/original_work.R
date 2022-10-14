@@ -1,14 +1,20 @@
----
-title: "Homework 1"
-output: html_notebook
----
+###########################################
+#Install Packages
+###########################################
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
-
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
-
-# Import Libraries
-```{r}
+#install.packages("rstudioapi") 
+#install.packages("ggplot2", type="binary")
+#install.packages("isoband", type="binary")
+#install.packages("farver", type="binary")
+#install.packages('ggplot2')
+#install.packages('ROCR', type="binary")
+#install.packages('proxy', type="binary")
+#install.packages('e1071', type="binary")
+#install.packages('Rcpp', type="binary")
+#install.packages('rlang', type="binary")
+#install.packages('caret', type="binary")
+#install.packages("ISLR")
+#install.packages("rpart.plot")
 library("rstudioapi") 
 library("ggplot2")
 library(caret)
@@ -18,12 +24,20 @@ library(ISLR)
 library(rpart)
 library(rpart.plot)
 theme_set(theme_minimal())
-```
+#install.packages("rmarkdown", dependencies=TRUE) 
 
+###########################################
+#Specify Root Directory 
+###########################################
+cur_dir = dirname(getSourceEditorContext()$path) 
+root_dir = dirname(cur_dir)
 
+setwd(root_dir)
+packrat::init(root_dir)
 
-# Exercise 1
-```{r}
+###########################################
+#EXERCISE 1
+###########################################
 train_df = read.table("Data/datasimul1_train.txt",header=T)
 test_df = read.table("Data/datasimul1_test.txt",header=T)
 
@@ -62,29 +76,19 @@ mse_calculator = function(train = train_df, test = test_df, degree_range = 1:10,
   return(perf_df)
 }
 
-```
-## Question 1.1
-```{r}
-mse_calculator(train = train_df, test = test_df, degree_range = 1:10, display_plot = FALSE, question_num = "1.1",include_test = FALSE)
-```
-## Question 1.2
-```{r}
-mse_calculator(train = train_df, test = test_df, degree_range = 1:10, display_plot = FALSE, question_num = "1.2",include_test = TRUE)
-```
+# Question 1.1
+perf_df_1_1 = mse_calculator(train = train_df, test = test_df, degree_range = 1:10, display_plot = FALSE, question_num = "1.1",include_test = FALSE)
+# Question 1.2
+perf_df_1_2 = mse_calculator(train = train_df, test = test_df, degree_range = 1:10, display_plot = FALSE, question_num = "1.2",include_test = TRUE)
 
-## Question 1.3
-```{r}
-mse_calculator(train = train_df, test = test_df, degree_range = 1:10, display_plot = TRUE, question_num = "1.3",include_test = TRUE)
-```
+# Question 1.3
+perf_df_1_3 = mse_calculator(train = train_df, test = test_df, degree_range = 1:10, display_plot = TRUE, question_num = "1.3",include_test = TRUE)
 
-## Question 1.4
-```{r}
-mse_calculator(train = train_df, test = test_df, degree_range = 10:1, display_plot = TRUE, question_num = "1.4",include_test = TRUE)
-```
+# Question 1.4
+perf_df_1_4 = mse_calculator(train = train_df, test = test_df, degree_range = 10:1, display_plot = TRUE, question_num = "1.4",include_test = TRUE)
 
-## Question 1.5
-From the result of this question, one can notice that the MSE is higher on the test set than on the training set with a test set MSE of 0.07 and a train set MSE of 0.067 which is due to the model having learned the estimates for the training set and not the test set.
-```{r}
+#Question 1.5
+# Lecture et preparation des données (voir document sur l'analyse de ces donnees)
 mydata=read.csv("Data/kc_house_data.csv")
 mydata$log_price=log(mydata$price)
 mydata$bedrooms2=mydata$bedroom^2
@@ -114,25 +118,15 @@ model1=lm(log_price~bedrooms+bathrooms+log_sqft_living+log_sqft_lot+floors_cat
           +age+lat+long,data=mydata.train)
 model1_summary = summary(model1)
 mse_train_model1 = mean(model1_summary$residuals^2)
-mse_test1 = mean((mydata.valid$log_price - predict.lm(model1, mydata.valid)) ^ 2)
-print(mse_test1)
-print(mse_train_model1)
-```
+mse_test1 = mean((test_df$y - predict.lm(model1, test_df)) ^ 2)
+  
 
-# Exercise 2
-## Question 2.1
-The **misclassification rate** measures the percentage of all the observations that were wrongly predicted meaning the observation reoffended when predicted not to and vice versa.
 
-The **false positive rate** measures the number of cases that were predicted as to reoffend but did not reoffend as a percentage of the number of cases not expected to reoffend.
 
-The **false discovery rate** measures the number of observations that were predicted as would reoffend when in fact they didnt as a percentage of all the cases that reoffended.
+###########################################
+#EXERCISE 2
+###########################################
 
-The difference between the false positive rate and the false discovery rate is the denominator and depends on how you want to represent the false positive.
-
-The **false negative rate** measures the number of observations that were predicted as were not going to reoffend but in fact did reoffend as a percentage of observations that did reoffend.
-
-## Question 2.2
-```{r}
 compas_df = read.csv("Data/Compas.csv", sep=";",header=T)
 compas_df$decil_score
 compas_df$two_year_recid
@@ -151,13 +145,8 @@ mis_rate = (fp + fn)/(fp + fn + tn +tp)
 fpr = fp / (fp + tn)
 # false discovery rates
 fdr = fp / (fp + tp)
-print(mis_rate)
-print(fpr)
-print(fdr)
-```
 
-## Question 2.3
-```{r}
+#Question 2.3
 compas_df$decile_score_scaled = compas_df$decile_score / 10
 compas_df$decile_score_scaled
 
@@ -169,28 +158,20 @@ plot(cost_perf)
 
 pred@cutoffs[[1]][which.min(cost_perf@y.values[[1]])]
 
-```
-
-## Question 2.4
-```{r}
+#Question 2.4
 afr_amer_df = subset(compas_df,race == 'African-American')
 conf_matrix_afr = confusionMatrix(data=factor(afr_amer_df$recidive_pred), reference = factor(afr_amer_df$two_year_recid))
 fp_afr = conf_matrix_afr$table[2,1]
 tp_afr = conf_matrix_afr$table[2,2]
 tn_afr = conf_matrix_afr$table[1,1]
 fn_afr = conf_matrix_afr$table[1,2]
-print('African-American')
+
 # misclassification
 mis_rate_afr = (fp_afr + fn_afr)/(fp_afr + fn_afr + tn_afr + tp_afr)
 # false positive rate
 fpr_afr = fp_afr / (fp_afr + tn_afr)
 # false discovery rates
 fdr_afr = fp_afr / (fp_afr + tp_afr)
-
-print(mis_rate_afr)
-print(fpr_afr)
-print(fdr_afr)
-
 
 cauc_df = subset(compas_df,race == 'Caucasian')
 conf_matrix_cauc = confusionMatrix(data=factor(cauc_df$recidive_pred), reference = factor(cauc_df$two_year_recid))
@@ -205,39 +186,23 @@ mis_rate_cauc = (fp_cauc + fn_cauc)/(fp_cauc + fn_cauc + tn_cauc + tp_cauc)
 fpr_cauc = fp_cauc / (fp_cauc + tn_cauc)
 # false discovery rates
 fdr_cauc = fp_cauc / (fp_cauc + tp_cauc)
-print('Caucasian')
-print(mis_rate_cauc)
-print(fpr_cauc)
-print(fdr_cauc)
-```
 
-## Question 2.5
-```{r}
+# Question 2.5
 pred_afr_amer = prediction(afr_amer_df$decile_score_scaled,afr_amer_df$two_year_recid)
 cost_perf_afr_amer <- performance(pred_afr_amer, "cost")
 plot(cost_perf_afr_amer)
 
 pred_afr_amer@cutoffs[[1]][which.min(cost_perf_afr_amer@y.values[[1]])]
 
-
-```
-
-## Question 2.5
-```{r}
 pred_cauc = prediction(cauc_df$decile_score_scaled,cauc_df$two_year_recid)
 cost_perf_cauc <- performance(pred_cauc, "cost")
 plot(cost_perf_cauc)
 
 pred_afr_cauc@cutoffs[[1]][which.min(cost_perf_cauc@y.values[[1]])]
-```
-## Question 2.5 
-The cutoff point has remained stayed the same for me, but when looking at the cutoff graph, we can notice a much greater in terms of the acceleration of the cost for African Americans than Caucasian meaning that it is easy to misclassify the african american population.
 
-## Question 2.6
-The purpose of this exercise was to assess the power that algorithms can have on decisions pertaining to real people, with bias being observed to the african american population. 
-
-# Exercise 3
-```{r}
+###########################################
+#EXERCISE 3
+###########################################
 dbm_df = read.csv("Data/dbm_final.csv",header=T)
 dbm_df$region=as.factor(dbm_df$region)
 dbm_df$revenu=as.factor(dbm_df$revenu)
@@ -272,25 +237,18 @@ plot_roc = function(y_true,y_pred,increment = 0.02){
 }
 df2 = plot_roc(y_true,y_pred)
 
-```
-## Question 4.1a
-The age coefficient displays that an increase in age of a year on average leads to a log likelihood increase of purchase of 0.075.
-```{R}
+###########################################
+#EXERCISE 4
+###########################################
+
 rodeo_df = read.csv("Data/rodeo.csv",header=T)
 model_rodeo=glm(achat~age,family="binomial",data=rodeo_df )
 # Question 4.1 a
 summary(model_rodeo)
-
-```
-## Question 4.1b 
-
-```{R}
+# Question 4.1 b 
 predict(model_rodeo, data.frame(age = c(35)), type="response")
 predict(model_rodeo, data.frame(age = c(50)), type="response")
-
-```
-## Question 4.1c
-```{R}
+# Question 4.1 c
 age_pred_df = data.frame(matrix(ncol = 2, nrow = 0))
 colnames(age_pred_df) = c("age","prediction")
 
@@ -301,26 +259,17 @@ for(year in seq(from=0, to=100, by=2)){
 p = ggplot(age_pred_df,aes(age,prediction))+geom_line(size = 2, alpha = 0.7)
 print(p)
 
-```
-
-## Question 4.1d
-```{R}
+# Question 4.1 d
 set.seed(101)
 sample <- sample.int(n = nrow(rodeo_df), size = floor(.75*nrow(rodeo_df)), replace = F)
 train_rod_df <- rodeo_df[sample, ]
 test_rod_df  <- rodeo_df[-sample, ]
 
-ctrl <- trainControl(method = "cv", number = 5)
+model_rodeo_cv=glm(achat~age,family="binomial",data=train_rod_df )
+y_pred_rod_cv = ifelse(predict(model_rodeo_cv, test_rod_df, type="response")>=0.5,1,0)
 
-rodeo_df$achat = factor(rodeo_df$achat)
-
-model_rodeo_cv <- train(achat~age, data = rodeo_df, method = "glm", trControl = ctrl,family=binomial())
-print(summary(model_rodeo_cv))
-
-
-#model_rodeo_cv=glm(achat~age,family="binomial",data=train_rod_df )
-y_pred_rod_cv = predict(model_rodeo_cv, test_rod_df, type="raw")
-
+length(y_pred_rod_cv)
+length(test_rod_df$achat)
 
 conf_matrix_rod_cv = confusionMatrix(data=factor(y_pred_rod_cv), reference = factor(test_rod_df$achat))
 fp_rod_cv = conf_matrix_rod_cv$table[2,1]
@@ -329,10 +278,8 @@ tn_rod_cv = conf_matrix_rod_cv$table[1,1]
 fn_rod_cv = conf_matrix_rod_cv$table[1,2]
 fpr_rod_cv = fp_rod_cv / (fp_rod_cv + tn_rod_cv)
 
-print(fpr_rod_cv)
-```
-
-```{R}
+################################################
+# Question 4.2
 set.seed(200)  
 n=nrow(rodeo_df)
 id.train=sample(1:n,300,replace=FALSE)
@@ -343,20 +290,13 @@ id.test=setdiff(setdiff(1:n,id.train),id.valid)
 rodeo_df.train=rodeo_df[id.train,]
 rodeo_df.valid=rodeo_df[id.valid,]
 rodeo_df.test=rodeo_df[id.test,]
-```
 
-# Question 4.3a
-An increase in revenue by 1 unit reduces the log likelihood of purchase by 0.85
-```{R}
+################################################
+# Question 4.3 a
 model_rodeo_all_var=glm(achat~.,family="binomial",data=rodeo_df.train )
 summary(model_rodeo_all_var)
 
-```
-## Question 4.3 b
-76% of the time, the model is capable of predicting a purchase given that there was a purchase (sensitivity)
-
-63% of the time the model is capable of accurately predicting that an observation did not complete the purchase given that they did not complete the purchase.
-```{R}
+# Question 4.3 b
 y_pred_all_var_prob = predict(model_rodeo_all_var, rodeo_df.valid, type="response")
 y_pred_all_var = ifelse(y_pred_all_var_prob>=0.5,1,0)
 conf_matrix_all_var = confusionMatrix(data=factor(y_pred_all_var), reference = factor(rodeo_df.valid$achat))
@@ -366,11 +306,8 @@ tn_all_var = conf_matrix_all_var$table[1,1]
 fn_all_var = conf_matrix_all_var$table[1,2]
 sensitivity_all_var = tp_all_var/(tp_all_var+fn_all_var)
 specificity_all_var = tn_all_var/(tn_all_var+fp_all_var)
-print(sensitivity_all_var)
-print(specificity_all_var)
-```
-## Question 4.3 c
-```{R}
+
+# Question 4.3 c
 pred_all_var = prediction(y_pred_all_var_prob,rodeo_df.valid$achat)
 perf_sn_sp = performance(pred_all_var, "tpr","fpr")
 plot(perf_sn_sp,colorize = T, lwd = 2)
@@ -378,17 +315,16 @@ abline(a = 0, b = 1)
 auc = performance(pred_all_var, measure = "auc")
 print(auc@y.values)
 
-```
-## Question 4.4
-Looking at the next 2 cells AIC and BIC are lower when including all the variables than when looking only at age interactions. This is because the BIC penalizes more when you have more features. But then when comparing the misclassification rate, they are both the same performancewise so more complexity does not improve the model.
-```{R}
+################################################
+# Question 4.4
+View(rodeo_df.train)
 model_rodeo_interactions=glm(achat~(.)*age,family="binomial",data=rodeo_df.train )
 summary(model_rodeo_interactions)
 y_pred_interactions = ifelse(predict(model_rodeo_interactions, rodeo_df.valid, type="response")>=0.5,1,0)
 y_pred_interactions_prob = predict(model_rodeo_interactions, rodeo_df.valid, type="response")
 
-print(AIC(model_rodeo_interactions))
-print(BIC(model_rodeo_interactions))
+AIC(model_rodeo_interactions)
+BIC(model_rodeo_interactions)
 
 conf_matrix_interactions = confusionMatrix(data=factor(y_pred_interactions), reference = factor(rodeo_df.valid$achat))
 fp_interactions = conf_matrix_interactions$table[2,1]
@@ -403,13 +339,10 @@ print(auc_interactions@y.values)
 
 # misclassification
 mis_rate_interactions = (fp_interactions + fn_interactions)/(fp_interactions + fn_interactions + tn_interactions +tp_interactions)
-print(mis_rate_interactions)
-```
 
-```{R}
 
-print(AIC(model_rodeo_all_var))
-print(BIC(model_rodeo_all_var))
+AIC(model_rodeo_all_var)
+BIC(model_rodeo_all_var)
 
 conf_matrix_all_var = confusionMatrix(data=factor(y_pred_all_var), reference = factor(rodeo_df.valid$achat))
 fp_all_var = conf_matrix_all_var$table[2,1]
@@ -420,17 +353,11 @@ fn_all_var = conf_matrix_all_var$table[1,2]
 # misclassification
 mis_rate_all_var = (fp_all_var + fn_all_var)/(fp_all_var + fn_all_var + tn_all_var +tp_all_var)
 
-print(mis_rate_all_var)
-```
-## Question 4.5
-```{R}
+# Question 4.5
 sensitivity_interactions = tp_interactions/(tp_interactions+fn_interactions)
 specificity_interactions = tn_interactions/(tn_interactions+fp_interactions)
-print(sensitivity_interactions)
-print(specificity_interactions)
-```
-## Question 4.6
-```{R}
+
+# Question 4.6
 step_wise_model_interactions <- stepAIC(model_rodeo_interactions, direction = "both", 
                       trace = FALSE)
 y_pred_step_wise_interactions_prob = predict(model_rodeo_interactions, rodeo_df.valid, type="response")
@@ -444,10 +371,10 @@ print(auc_step_wise_interactions@y.values)
 perf_step_wise_interactions = performance(pred_step_wise_interactions, "tpr","fpr")
 plot(perf_step_wise_interactions,colorize = T, lwd = 2)
 abline(a = 0, b = 1) 
-```
-# Exercise 5 
 
-```{R}
+###########################################
+#EXERCISE 5
+###########################################
 set.seed(12345)
 x=rnorm(1000)
 variations = c(0.1,0.5,1,1.5,2,2.5,3)
@@ -458,12 +385,14 @@ beta1=2
 sigma=1
 y=beta0+beta1*x+ rlnorm(200)
 
-#x[1:100]
+x[1:100]
 
-#model=lm(y~x)
-#summary(model)
-#model$coefficients[2]
+model=lm(y~x)
+summary(model)
+model$coefficients[2]
 
+y
+x
 
 sim_df = data.frame(matrix(ncol = 3, nrow = 0))
 colnames(sim_df) = c("error_variation","sample_size","b1_est")
@@ -479,10 +408,7 @@ for (var in variations){
   }
 }
 standard_error = sd(sim_df$b1_est)/sqrt(length(sim_df$b1_est))
-print(standard_error)
-```
 
-```{R}
 sim_df_500 = data.frame(matrix(ncol = 3, nrow = 0))
 colnames(sim_df_500) = c("error_variation","sample_size","b1_est")
 for (i in 1:500){
@@ -499,14 +425,11 @@ for (i in 1:500){
   }
 }
 standard_error_500 = sd(sim_df_500$b1_est)/sqrt(length(sim_df_500$b1_est))
-standard_error_500
-```
 
+###########################################
+#EXERCISE 6
+###########################################
 
-# Exercise 6
-
-## Question 6.1
-```{R}
 n=nrow(OJ)
 set.seed(1234)
 id.train=sample(1:n,size=800)
@@ -514,75 +437,28 @@ id.test=setdiff(1:n,id.train)
 OJ.train=OJ[id.train,-3]
 OJ.test=OJ[id.test,-3]
 
-```
-
-## Question 6.2
-```{R}
+View(OJ.train)
+# Question 6.2
 mytree = rpart(Purchase~., data=OJ.train, method = "class")
 plot(mytree)
 text(mytree)
-length(rownames(mytree$frame)[mytree$frame$var == "<leaf>"])
-```
-## Question 6.3
-Node number 11: 75 observations,    complexity param=0.02365931
-  predicted class=MM  expected loss=0.4  P(node) =0.09375
-    class counts:    30    45
-   probabilities: 0.400 0.600 
-  left son=22 (20 obs) right son=23 (55 obs)
-  Primary splits:
-      ListPriceDiff  < 0.235     to the right, improve=4.909091, (0 missing)
-      PriceDiff      < -0.165    to the right, improve=4.100996, (0 missing)
-      WeekofPurchase < 242       to the left,  improve=3.137733, (0 missing)
-      DiscMM         < 0.47      to the left,  improve=2.578947, (0 missing)
-      PctDiscMM      < 0.227263  to the left,  improve=2.578947, (0 missing)
-  Surrogate splits:
-      PriceMM     < 2.155     to the right, agree=0.760, adj=0.10, (0 split)
-      PriceCH     < 1.755     to the left,  agree=0.747, adj=0.05, (0 split)
-      SalePriceCH < 1.755     to the left,  agree=0.747, adj=0.05, (0 split)
-      PriceDiff   < -0.165    to the right, agree=0.747, adj=0.05, (0 split)
-```{R}
+# Question 6.3
 print(mytree)
 tree_summary = summary(mytree)
+# Question 6.4 TODO 
+tree_summary$frame
+tree_summary$terms
+tree_summary
+prp(mytree)
+mytree$where
 
-```
-
-## Question 6.4
-```{R}
-ch_par_node <- 30/75 
-mm_par_node <- 45/75 
-log_ch_par <- log2(ch_par_node) 
-log_mm_par <- log2(mm_par_node) 
-entropy <- -((ch_par_node)*(log_ch_par))-((mm_par_node)*(log_mm_par)) 
-
-ch_chi_node <- 14/20 
-mm_chi_node <- 6/20 
-log_ch_chil_node <- log2(ch_chi_node)
-
-log_mm_chi_node <- log2(mm_chi_node) 
-
-entropy2 <- -(ch_chi_node)*(log_ch_chil_node)-(mm_chi_node)*(log_mm_chi_node)
-
-ch_chi_node2 <- 16/55 
-mm_chi_node2 <- 39/55 
-log_ch_chil_node2 <- log2(ch_chi_node2) 
-log_mm_chi_node2 <- log2(mm_chi_node2) 
-entropy3 <- -(ch_chi_node2)*(log_ch_chil_node2)-(mm_chi_node2)*(log_mm_chi_node2)
-
-weight_ent_chi <- (20/75)*entropy2 + (55/75)*entropy3 
-gain <- entropy - weight_ent_chi 
-gain
-```
-
-## Question 6.5
-```{R}
+# Question 6.5
 unique_dsc = length(unique(OJ.train$PctDiscMM)) 
 unique_store = length(unique(OJ.train$STORE))
 answer = unique_dsc + unique_store
-print(answer)
-```
 
-## Question 6.6
-```{R}
+
+# Question 6.6
 y_pred_tree = predict(mytree,OJ.test, type="class")
 conf_matrix_tree = confusionMatrix(data=factor(y_pred_tree), reference = factor(OJ.test$Purchase))
 fp_tree = conf_matrix_tree$table[2,1]
@@ -593,11 +469,7 @@ fn_tree = conf_matrix_tree$table[1,2]
 # misclassification
 mis_rate_tree = (fp_tree + fn_tree)/(fp_tree + fn_tree + tn_tree +tp_tree)
 
-print(mis_rate_tree)
-```
-
-## Question 6.7
-```{R}
+# Question 6.7
 mytree$cptable
 cp_optimal=mytree$cptable[which.min(mytree$cptable[,4]),1]
 mytree_optimal = prune(mytree,cp=cp_optimal)
@@ -611,20 +483,11 @@ fn_tree_optimal = conf_matrix_tree_optimal$table[1,2]
 
 # misclassification
 mis_rate_tree_optimal = (fp_tree_optimal + fn_tree_optimal)/(fp_tree_optimal + fn_tree_optimal + tn_tree_optimal +tp_tree_optimal)
-print(mis_rate_tree_optimal)
-```
 
-## Question 6.8
-```{R}
+# false positive rate
 fpr_tree_optimal = fp_tree_optimal / (fp_tree_optimal + tn_tree_optimal)
-print(fpr_tree_optimal)
-fnr_tree_optimal = fn_tree_optimal / (fn_tree_optimal + tp_tree_optimal)
-print(fnr_tree_optimal)
-```
 
-## Question 6.9
-The validation metrics all seem to be similar regardless of the random sampling of the training and testing data despite each tree being different.
-```{R}
+
 n=nrow(OJ)
 set.seed(2)
 id.train=sample(1:n,size=800)
@@ -643,7 +506,7 @@ fn_tree = conf_matrix_tree$table[1,2]
 
 # misclassification
 mis_rate_tree = (fp_tree + fn_tree)/(fp_tree + fn_tree + tn_tree +tp_tree)
-print(mis_rate_tree)
+
 # Question 6.7
 mytree$cptable
 cp_optimal=mytree$cptable[which.min(mytree$cptable[,4]),1]
@@ -658,16 +521,6 @@ fn_tree_optimal = conf_matrix_tree_optimal$table[1,2]
 
 # misclassification
 mis_rate_tree_optimal = (fp_tree_optimal + fn_tree_optimal)/(fp_tree_optimal + fn_tree_optimal + tn_tree_optimal +tp_tree_optimal)
-print(mis_rate_tree_optimal)
+
 # false positive rate
 fpr_tree_optimal = fp_tree_optimal / (fp_tree_optimal + tn_tree_optimal)
-fnr_tree_optimal = fn_tree_optimal / (fn_tree_optimal + tp_tree_optimal)
-
-print(fpr_tree_optimal)
-print(fnr_tree_optimal)
-```
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
-
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
-
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.

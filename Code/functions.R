@@ -385,14 +385,12 @@ beta1=2
 sigma=1
 y=beta0+beta1*x+ rlnorm(200)
 
-x[1:100]
+#x[1:100]
 
-model=lm(y~x)
-summary(model)
-model$coefficients[2]
+#model=lm(y~x)
+#summary(model)
+#model$coefficients[2]
 
-y
-x
 
 sim_df = data.frame(matrix(ncol = 3, nrow = 0))
 colnames(sim_df) = c("error_variation","sample_size","b1_est")
